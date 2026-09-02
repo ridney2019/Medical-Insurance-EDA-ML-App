@@ -130,14 +130,21 @@ st.plotly_chart(fig_children, use_container_width=True)
 st.subheader("Regional Disparities on a Map (Approximate Locations)")
 map_df = filtered.copy()
 rng = np.random.default_rng(42)
-map_df["lat"] = map_df["region"].map(lambda r: REGION_COORDS[r][0]) + rng.uniform(-0.4, 0.4, len(map_df))
-map_df["lon"] = map_df["region"].map(lambda r: REGION_COORDS[r][1]) + rng.uniform(-0.4, 0.4, len(map_df))
+# .get(..., default) guards against region values not present in REGION_COORDS, which
+# otherwise resolve to NaN lat/lon and make Plotly auto-centre the map on (0, 0), i.e. Africa.
+map_df["lat"] = map_df["region"].map(lambda r: REGION_COORDS.get(r, (54.0, -2.5))[0]) + rng.uniform(-0.4, 0.4, len(map_df))
+map_df["lon"] = map_df["region"].map(lambda r: REGION_COORDS.get(r, (54.0, -2.5))[1]) + rng.uniform(-0.4, 0.4, len(map_df))
 fig_map = px.scatter_map(
     map_df, lat="lat", lon="lon", color="charges", size="charges",
     color_continuous_scale="Reds", hover_data=["region", "smoker", "age", "bmi", "NoClaimsBonus"],
     zoom=4.5,
+    center={"lat": 54.0, "lon": -2.5},
+    map_style="open-street-map",
 )
-fig_map.update_layout(margin=dict(l=0, r=0, t=0, b=0))
+fig_map.update_layout(
+    margin=dict(l=0, r=0, t=0, b=0),
+    map=dict(center=dict(lat=54.0, lon=-2.5), zoom=4.5),
+)
 st.plotly_chart(fig_map, use_container_width=True)
 
 st.divider()
